@@ -1,8 +1,7 @@
 #include <iostream>
-#include <vector>
+//#include <vector>
 #include "BitmapPlusPlus/include/BitmapPlusPlus.hpp"
 #include "argh/argh.h"
-#include <fstream>
 #include <filesystem>
 #include "array_calculator.h"
 
@@ -12,12 +11,12 @@ using namespace bmp;
 using namespace filesystem;
 
 struct color {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
+    [[maybe_unused]] uint8_t r = 0;
+    [[maybe_unused]] uint8_t g = 0;
+    [[maybe_unused]] uint8_t b = 0;
 };
 
-int main(int argc, char **argv) {
+int main([[maybe_unused]] int argc, char **argv) {
 
     parser cmdl(argv);
 
@@ -46,16 +45,33 @@ int main(int argc, char **argv) {
     image.load(image_name);
     auto height = image.height();
     auto width = image.width();
-    vector<vector<color>> image_vec(height);
-    for (int h = 0; h < height; ++h) {
-        image_vec.at(h).resize(width);
-        for (int w = 0; w < width; ++w) {
-            auto pixel = image.get(w, h);
-            auto &i = image_vec.at(h).at(w);
-            i.r = pixel.r;
-            i.g = pixel.g;
-            i.b = pixel.b;
+    //vector<vector<color>> image_vec(height);
+    color **image_arr;
+    image_arr = (color **) malloc(sizeof(color) * height);
+    for (int i = 0; i < height; ++i) {
+        image_arr[i] = (color *) malloc(sizeof(color) * width);
+        for (int j = 0; j < width; ++j) {
+            auto pixel = image.get(j, i);
+            auto &item = image_arr[i][j];
+            item.r = pixel.r;
+            item.g = pixel.g;
+            item.b = pixel.b;
         }
     }
-    cout << unsigned(image_vec.at(100).at(100).r) << endl;
+    cout << unsigned(image_arr[100][100].r) << endl;
+    //for (int h = 0; h < height; ++h) {
+    //    image_vec.at(h).resize(width);
+    //    for (int w = 0; w < width; ++w) {
+    //        auto pixel = image.get(w, h);
+    //        auto &i = image_vec.at(h).at(w);
+    //        i.r = pixel.r;
+    //        i.g = pixel.g;
+    //        i.b = pixel.b;
+    //    }
+    //}
+    //for (int i = 0; i < height; ++i) {
+    //    image_arr[i] = image_vec.at(i).data();
+    //}
+    //cout << unsigned(image_vec.at(100).at(100).r) << endl;
+
 }
