@@ -1,5 +1,4 @@
 #include <iostream>
-//#include <vector>
 #include "BitmapPlusPlus/include/BitmapPlusPlus.hpp"
 #include "argh/argh.h"
 #include <filesystem>
@@ -59,6 +58,10 @@ int main([[maybe_unused]] int argc, char **argv) {
         }
     }
     cout << unsigned(image_arr[100][100].r) << endl;
+
+    vector<vector<double>> pos = {{1, 0, width / 2.0},
+                                  {0, 1, -height / 2.0},
+                                  {0, 0, 1}};
     //for (int h = 0; h < height; ++h) {
     //    image_vec.at(h).resize(width);
     //    for (int w = 0; w < width; ++w) {
