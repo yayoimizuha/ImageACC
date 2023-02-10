@@ -104,7 +104,12 @@ int main([[maybe_unused]] int argc, char **argv) {
     for (int i = 0; i < 3; ++i) {
         affine_inv_arr[i] = affine_inv.at(i).data();
     }
-    vector<vector<color>> dest_vec(height, vector<color>(width));
+    color **dest_arr;
+    dest_arr = (color **) malloc(sizeof(color *) * height);
+    for (int i = 0; i < height; ++i) {
+        dest_arr[i] = (color *) malloc(sizeof(color) * width);
+    }
+
     Bitmap dest_img(width, height);
 #pragma omp parallel for
     for (int i = 0; i < height; ++i) {
@@ -119,7 +124,18 @@ int main([[maybe_unused]] int argc, char **argv) {
             auto src_pos_arr = produce_array(affine_inv_arr, dest_pos);
             int32_t src_x = min(max(0, (int32_t) src_pos_arr[0][0]), width - 1);
             int32_t src_y = min(max(0, (int32_t) src_pos_arr[1][0]), height - 1);
-            dest_img.set(j, i, image.get(src_x, src_y));
+            dest_arr[i][j] = image_arr[src_y][src_x];
+            //dest_img.set(j, i, image.get(src_x, src_y));
+
+        }
+    }
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            Pixel pixel;
+            pixel.r = dest_arr[i][j].r;
+            pixel.g = dest_arr[i][j].g;
+            pixel.b = dest_arr[i][j].b;
+            dest_img.set(j, i, pixel);
         }
     }
     dest_img.save("dest.bmp");
