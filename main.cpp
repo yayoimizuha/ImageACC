@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "openmp-use-default-none"
+
 #include <iostream>
 #include "BitmapPlusPlus/include/BitmapPlusPlus.hpp"
 #include "argh/argh.h"
@@ -16,7 +19,6 @@ struct color {
     [[maybe_unused]] uint8_t b = 0;
 };
 
-inline double **produce_array(double **array_A, double array_B[3][1]);
 
 double PI = atan(1.0) * 4;
 
@@ -111,22 +113,32 @@ int main([[maybe_unused]] int argc, char **argv) {
     }
 
     Bitmap dest_img(width, height);
-#pragma omp parallel for
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-            // auto src_pos = Produce_array(affine_inv,
-            //                              {{static_cast<double>(j)},
-            //                               {static_cast<double>(i)},
-            //                               {1}});
-            double dest_pos[3][1] = {{(double) j},
-                                     {(double) i},
-                                     {1.0}};
-            auto src_pos_arr = produce_array(affine_inv_arr, dest_pos);
-            int32_t src_x = min(max(0, (int32_t) src_pos_arr[0][0]), width - 1);
-            int32_t src_y = min(max(0, (int32_t) src_pos_arr[1][0]), height - 1);
-            dest_arr[i][j] = image_arr[src_y][src_x];
-            //dest_img.set(j, i, image.get(src_x, src_y));
+    for (int n = 0; n < 20; ++n) {
+#pragma acc data copy(affine_inv_arr[3][3], image_arr[0:height][0:width]), copy(dest_arr[0:height][0:width])
+#pragma acc kernels
+#pragma acc loop independent
+        for (int i = 0; i < height; ++i) {
+#pragma acc loop independent
+            for (int j = 0; j < width; ++j) {
+                double dest_pos[3][1] = {{(double) j},
+                                         {(double) i},
+                                         {1.0}};
+                double src_pos[3][1];
 
+                for (int k = 0; k < 3; ++k) {
+                    for (int l = 0; l < 1; ++l) {
+                        double inner_product = 0.0;
+                        for (int m = 0; m < 3; ++m) {
+                            inner_product += affine_inv_arr[k][m] * dest_pos[m][l];
+                        }
+                        src_pos[k][l] = inner_product;
+                    }
+                }
+                int32_t src_x = min(max(0, (int32_t) src_pos[0][0]), width - 1);
+                int32_t src_y = min(max(0, (int32_t) src_pos[1][0]), height - 1);
+                dest_arr[i][j] = image_arr[src_y][src_x];
+
+            }
         }
     }
     for (int i = 0; i < height; ++i) {
@@ -141,20 +153,4 @@ int main([[maybe_unused]] int argc, char **argv) {
     dest_img.save("dest.bmp");
 }
 
-inline double **produce_array(double **array_A, double array_B[3][1]) {
-    double **array_C;
-    array_C = (double **) malloc(sizeof(double *) * 3);
-    for (int i = 0; i < 3; ++i) {
-        array_C[i] = (double *) malloc(sizeof(double) * 1);
-    }
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 1; ++j) {
-            double inner_product = 0.0;
-            for (int k = 0; k < 3; ++k) {
-                inner_product += array_A[i][k] * array_B[k][j];
-            }
-            array_C[i][j] = inner_product;
-        }
-    }
-    return array_C;
-}
+#pragma clang diagnostic pop
